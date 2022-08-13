@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "extractor.py",
-            "args": ["-i", "..\\test\\ftp.dump", "-d", "..\\test\\database.pkl"],
+            "args": ["-i", "..\\test\\ftp.exe", "-d", "..\\test\\ftp.asmdump"],
             "console": "integratedTerminal"
         },
         {
@@ -18,6 +18,22 @@
             "request": "launch",
             "program": "rename.py",
             "args": ["-i", "..\\test"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: load",
+            "type": "python",
+            "request": "launch",
+            "program": "load.py",
+            "args": ["-i", "..\\test", "-d", "..\\test\\database.pkl"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: ngram_reader",
+            "type": "python",
+            "request": "launch",
+            "program": "ngram_reader.py",
+            "args": ["-i", "..\\test\\database.pkl", "-b", "0", "-l", "50"],
             "console": "integratedTerminal"
         }
     ]

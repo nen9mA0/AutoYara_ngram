@@ -67,7 +67,9 @@
   
   - -o 输出的asmdump文件路径
 
-- load.py 解析asmdump文件并根据当前的ngram规则生成结果（未完成）
+- load.py 解析asmdump文件并根据当前的ngram规则生成结果（基本完成）
+
+- ngram_reader.py  用来检查database中采集的ngram内容的，因为database的格式是我自己hash过的，所以需要这个程序做解析
 
 - rename.py 很不优雅的代码，因为发现样本集里有些文件后缀是大写的 `.EXE` ，windows找文件不区分大小写但make是区分的，这个脚本用来把大写后缀 `.EXE` 改成小写 `.exe`
 
@@ -82,3 +84,5 @@
 * 2022/8/14
   
   * 加入rename.py
+  * load.py基本完成
+  * ngram_reader.py完成
