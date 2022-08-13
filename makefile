@@ -7,9 +7,12 @@ DST = $(subst .exe,.asmdump,$(TMP))
 
 all: $(DST)
 
+init:
+	python rename.py -i $(TARGET_FOLDER)
+
 debug:
 	@echo $(SRC)
 	@echo $(DST)
 
 $(DUMP_FOLDER)/%.asmdump:$(TARGET_FOLDER)/%.exe
-	python extractor.py -i $< -o $@
+	python extractor.py -i "$<"" -o "$@"

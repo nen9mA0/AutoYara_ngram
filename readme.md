@@ -24,18 +24,6 @@
   
   **这里也注意要把bin下的make.exe加入环境变量（对于windows）**
 
-### Scripts
-
-* makefile  用于对多个样本批量处理
-
-* extractor.py  对一个样本文件使用radare2进行分析，并dump出各个函数的字节串，保存
-  
-  * -i  输入的样本文件路径
-  
-  * -o  输出的asmdump文件路径
-
-* load.py  解析asmdump文件并根据当前的ngram规则生成结果（未完成）
-
 ### Configuration
 
 #### makefile
@@ -51,17 +39,37 @@
 则对于 D:/sample/calc.exe 分析后对应的文件是 D:/dump/calc.asmdump
 ```
 
+**注意：路径分隔符斜杠方向，是`/`而不是`\`**
+
 ### 运行
 
-在程序文件夹下打开终端，输入
+* 在程序文件夹下打开终端
 
-```
-make -i 2>err.log
-```
+* 先 `make init` ，这里会调用一个脚本把所有大写后缀 `.EXE` 改为 `.exe`
+
+* 再执行主要的操作
+  
+  ```
+  make -i 2>err.log
+  ```
 
 * `-i` 忽略错误 `2>err.log`将错误信息保存到err.log
 
 **注意，之前测了一下好像make -j有点问题，具体问题打算之后再看，可以先跑着（或者各位dalao帮忙找下）**
+
+### Scripts
+
+- makefile 用于对多个样本批量处理
+
+- extractor.py 对一个样本文件使用radare2进行分析，并dump出各个函数的字节串，保存
+  
+  - -i 输入的样本文件路径
+  
+  - -o 输出的asmdump文件路径
+
+- load.py 解析asmdump文件并根据当前的ngram规则生成结果（未完成）
+
+- rename.py 很不优雅的代码，因为发现样本集里有些文件后缀是大写的 `.EXE` ，windows找文件不区分大小写但make是区分的，这个脚本用来把大写后缀 `.EXE` 改成小写 `.exe`
 
 ### Changelog
 
@@ -71,4 +79,6 @@ make -i 2>err.log
   
   * TODO： load.py
 
-
+* 2022/8/14
+  
+  * 加入rename.py

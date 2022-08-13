@@ -5,11 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: 当前文件",
+            "name": "Python: extractor",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "extractor.py",
             "args": ["-i", "..\\test\\ftp.dump", "-d", "..\\test\\database.pkl"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: rename",
+            "type": "python",
+            "request": "launch",
+            "program": "rename.py",
+            "args": ["-i", "..\\test"],
             "console": "integratedTerminal"
         }
     ]

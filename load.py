@@ -1,4 +1,3 @@
-from logging import captureWarnings
 import sys
 import getopt
 import os
