@@ -93,6 +93,18 @@ if __name__ == "__main__":
         for file in hash_dict["files"]:
             print(file)
 
+    print("total")
+    total = hash_dict["total"]
+    print(total)
+
+    # for debug check
+    mysum = 0
+    for i in hash_dict["data"]:
+        mysum += hash_dict["data"][i]
+
+    if mysum != total:
+        raise ValueError("")
+
     num = 0
     if length == 0:
         length = len(hash_dict["data"])
