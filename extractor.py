@@ -15,6 +15,32 @@ def SavedName(disasmj):
         ops.append(asm_dict)
     return ops
 
+def HandleR2(infile, disasm_dict):
+    # pipe_name = infile+".pipe"
+    # if not os.path.exists(pipe_name):
+    #     with open(pipe_name, "w") as f:
+    #         pass
+    # os.environ["r2pipe_path"] = pipe_name
+    import r2pipe
+    r2 = r2pipe.open(infile)
+    r2.cmd('aaaa')
+    test = r2.cmd("\n")
+    func_lst = r2.cmdj("aflj")            # evaluates JSONs and returns an object
+    for func in func_lst:
+        tmp = {}
+        disasmj = r2.cmdj("pdfj @ %d" %func["offset"])
+        ops = SavedName(disasmj)
+        disasm_dict[func["offset"]] = ops
+    info = r2.cmdj("ij")
+    r2.quit()
+    return info
+
+def HandleBarf(infile, disasm_dict):
+    from barf import BARF
+    barf = BARF(infile)
+    for addr, asm_instr, reil_instrs in barf.translate():
+        pass
+
 if __name__ == "__main__":
     opts, args = getopt.getopt(sys.argv[1:], "i:o:")
     for opt, value in opts:
@@ -32,23 +58,12 @@ if __name__ == "__main__":
 
     disasm_dict = {}
 
-    r2 = r2pipe.open(infile)
-    r2.cmd('aaaa')
-    test = r2.cmd("\n")
-    func_lst = r2.cmdj("aflj")            # evaluates JSONs and returns an object
-    for func in func_lst:
-        tmp = {}
-        disasmj = r2.cmdj("pdfj @ %d" %func["offset"])
-        ops = SavedName(disasmj)
-        disasm_dict[func["offset"]] = ops
+    info = HandleR2(infile, disasm_dict)
 
-    info = r2.cmdj("ij")
     file = {}
     file["name"] = info["core"]["file"]
     file["addr"] = info["bin"]["baddr"]
     file["disasm"] = disasm_dict
-
-    r2.quit()
 
 
     with open(outfile, "wb") as f:

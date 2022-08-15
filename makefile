@@ -1,3 +1,5 @@
+PYTHON = python
+
 TARGET_FOLDER = I:/Project/auto_yara/ngram/test
 DUMP_FOLDER = I:/Project/auto_yara/ngram/test
 
@@ -8,15 +10,15 @@ DST = $(subst .exe,.asmdump,$(TMP))
 all: $(DST)
 
 init:
-	python rename.py -i $(TARGET_FOLDER)
+	$(PYTHON) rename.py -i $(TARGET_FOLDER)
 
 build_table:
-	python load.py -i $(DUMP_FOLDER) -d $(DUMP_FOLDER)/database.pkl
+	$(PYTHON) load.py -i $(DUMP_FOLDER) -d $(DUMP_FOLDER)/database.pkl
 
 debug:
 	@echo $(SRC)
 	@echo $(DST)
 
 $(DUMP_FOLDER)/%.asmdump:$(TARGET_FOLDER)/%.exe
-	python extractor.py -i "$<" -o "$@"
+	$(PYTHON) extractor.py -i "$<" -o "$@"
 
