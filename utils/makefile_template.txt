@@ -1,0 +1,25 @@
+SCRIPT_PATH = I:/Project/auto_yara/ngram/AutoYara_ngram
+PYTHON = python
+
+TARGET_FOLDER = I:/Project/auto_yara/ngram/test
+DUMP_FOLDER = I:/Project/auto_yara/ngram/test
+
+SRC = $(wildcard $(TARGET_FOLDER)/*.exe)
+TMP = $(subst $(TARGET_FOLDER), $(DUMP_FOLDER), $(SRC))
+DST = $(subst .exe,.asmdump,$(TMP))
+
+all: $(DST)
+
+init:
+	$(PYTHON) $(SCRIPT_PATH)/rename.py -i $(TARGET_FOLDER)
+
+build_table:
+	$(PYTHON) $(SCRIPT_PATH)/load.py -i $(DUMP_FOLDER) -d $(DUMP_FOLDER)/database.pkl
+
+debug:
+	@echo $(SRC)
+	@echo $(DST)
+
+$(DUMP_FOLDER)/%.asmdump:$(TARGET_FOLDER)/%.exe
+	$(PYTHON) $(SCRIPT_PATH)/extractor.py -i "$<" -o "$@"
+
