@@ -1,8 +1,8 @@
 ### Requirement
 
-* radare2  最好是5.54，我们实验机是windows所以装的是win64的安装包  https://github.com/radareorg/radare2/releases/download/5.5.4/radare2-5.5.4-w64.zip
+* radare2  最新版5.7.6，我们实验机是windows所以装的是win64的安装包 https://github.com/radareorg/radare2/releases/download/5.7.6/radare2-5.7.6-w64.zip
   
-  如果采用的linux就选择对应版本吧 [Release 5.5.4 - stability release · radareorg/radare2 · GitHub](https://github.com/radareorg/radare2/releases/tag/5.5.4)
+  如果采用的linux就选择对应版本吧 [Release 5.7.6 · radareorg/radare2 · GitHub](https://github.com/radareorg/radare2/releases/tag/5.7.6)
   
   **解压完成后需要把radare2下的bin文件夹加入环境变量（对于windows）**，若成功，在命令行输入r2会回显radare2主程序的选项
 
@@ -55,7 +55,9 @@
 
 * `-i` 忽略错误 `2>err.log`将错误信息保存到err.log
 
-**注意，之前测了一下好像make -j有点问题，具体问题打算之后再看，可以先跑着（或者各位dalao帮忙找下）**
+~~**注意，之前测了一下好像make -j有点问题，具体问题打算之后再看，可以先跑着（或者各位dalao帮忙找下）**~~
+
+现在测了下make -j应该没什么问题
 
 ### Scripts
 
@@ -86,3 +88,7 @@
   * 加入rename.py
   * load.py基本完成
   * ngram_reader.py完成
+
+* 2022/8/15
+  
+  * 整了老半天make -j的东西，好像能用了但我不知道为什么
