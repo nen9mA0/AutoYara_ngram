@@ -21,7 +21,7 @@ class NGramDict(object):
 
 
 class NGramSlice(object):
-    length = 3
+    length = 4
     def __init__(self):
         self.ngd = NGramDict()
         self.total = 0
@@ -153,6 +153,14 @@ if __name__ == "__main__":
             file_lst.append(infile)
     if not os.path.exists(outfile):
         print("Database not exist, Create")
+    else:
+        print("Are you sure to overwrite %s ? (y/n)" %outfile)
+        while True:
+            a = input()
+            if a == 'y':
+                break
+            elif a == 'n':
+                exit(0)
 
     # infile = "..\\test\\ftp.dump"
 
@@ -160,7 +168,10 @@ if __name__ == "__main__":
     cs.detail = True
     ngs = NGramSlice()
 
+    file_num = 1
     for file in file_lst:
+        print("%06d: Loading %s" %(file_num, file))
+
         with open(file, "rb") as f:
             disasm_dict = pickle.load(f)
 
@@ -173,6 +184,7 @@ if __name__ == "__main__":
             for insn in decode:
                 insn_lst.append(insn)
             ngs.Slicer(insn_lst)
+        file_num += 1
 
     database = {}
     database["files"] = file_lst
