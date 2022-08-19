@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "extractor.py",
-            "args": ["-i", "..\\test\\ftp.exe", "-d", "..\\test\\ftp.asmdump"],
+            "args": ["-i", "..\\test\\ftp.exe", "-o", "..\\test\\ftp.asmdump"],
             "console": "integratedTerminal"
         },
         {
@@ -33,7 +33,16 @@
             "type": "python",
             "request": "launch",
             "program": "ngram_reader.py",
-            "args": ["-i", "..\\test\\database.pkl", "-b", "0", "-l", "50"],
+            "args": ["-i", "..\\database\\database_1.pkl", "-b", "0", "-l", "50", "-s"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: cvt_database",
+            "type": "python",
+            "request": "launch",
+            "program": "cvt_database.py",
+            "args": ["-i", "C:\\Users\\root\\Documents\\WeChat Files\\wxid_k0oaccu7xi0a22\\FileStorage\\File\\2022-08\\database10.pkl", 
+                     "-o", "..\\database\\1_gram.pkl", "-n", "1"],
             "console": "integratedTerminal"
         }
     ]

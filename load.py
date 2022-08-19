@@ -21,7 +21,7 @@ class NGramDict(object):
 
 
 class NGramSlice(object):
-    length = 4
+    length = 1
     def __init__(self):
         self.ngd = NGramDict()
         self.total = 0

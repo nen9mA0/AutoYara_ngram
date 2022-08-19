@@ -19,7 +19,9 @@ cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 def ParseSlice(slice):
     end = len(slice)
     i = 0
+    begin = 0
     while i < end:
+        begin = i
         disasm_lst = []
         insn_size = (slice[i] >> 3) & 0xf
         opfix_size = slice[i] & 0x7
@@ -58,18 +60,25 @@ def ParseSlice(slice):
         disasm_code = bytes(disasm_lst)
         decode = cs.disasm(disasm_code, 0)
         num = 0
+        flag = False
         for insn in decode:
+            flag = True
             if num != 0:
                 break
             mystr = insn.mnemonic + " "
             mystr += " ".join(op_types[::-1])
             print(mystr)
             num += 1
+        if not flag:
+            print("%s :  Disassemble Error" %slice[begin:i].hex())
+    if i != end:
+        raise ValueError("%s : Parsing Result Not Equal" %slice[begin:i].hex())
 
 
 if __name__ == "__main__":
-    opts, args = getopt.getopt(sys.argv[1:], "i:b:l:f")
+    opts, args = getopt.getopt(sys.argv[1:], "i:b:l:fs")
     display_file = False
+    display_size = False
     begin = 0
     length = 0
     for opt, value in opts:
@@ -81,6 +90,8 @@ if __name__ == "__main__":
             length = int(value, 10)
         elif opt == "-f":
             display_file = True
+        elif opt == "-s":
+            display_size = True
 
     if not os.path.exists(infile):
         raise ValueError("infile not exist: %s" %infile)
@@ -92,6 +103,9 @@ if __name__ == "__main__":
         print("files:")
         for file in hash_dict["files"]:
             print(file)
+
+    if display_size:
+        print("Total File Numbers: %d" %(len(hash_dict["files"])))
 
     print("total")
     total = hash_dict["total"]
