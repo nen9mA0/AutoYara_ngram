@@ -13,7 +13,7 @@ init:
 	$(PYTHON) rename.py -i $(TARGET_FOLDER)
 
 build_table:
-	$(PYTHON) load.py -i $(DUMP_FOLDER) -d $(DUMP_FOLDER)/database.pkl
+	$(PYTHON) load.py -i $(DUMP_FOLDER) -d $(DUMP_FOLDER)/database.pkl -n 4 -a x86
 
 debug:
 	@echo $(SRC)

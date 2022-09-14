@@ -43,8 +43,12 @@
             "args": [
                 "-i",
                 "..\\test",
+                "-n",
+                "4",
                 "-d",
-                "..\\test\\database.pkl"
+                "..\\test\\database.pkl",
+                "-a",
+                "x86"
             ],
             "console": "integratedTerminal"
         },
