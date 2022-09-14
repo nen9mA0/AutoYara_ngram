@@ -16,6 +16,7 @@ def SavedName(disasmj):
     return ops
 
 def HandleR2(infile, disasm_dict):
+    # arch_lst = ("x86", )
     # pipe_name = infile+".pipe"
     # if not os.path.exists(pipe_name):
     #     with open(pipe_name, "w") as f:
@@ -24,7 +25,18 @@ def HandleR2(infile, disasm_dict):
     import r2pipe
     r2 = r2pipe.open(infile)
     r2.cmd('aaaa')
-    test = r2.cmd("\n")
+    ej = r2.cmdj('ej')
+    # arch = ej["anal.arch"]
+
+    # flag = False
+    # for allow_arch in arch_lst:
+    #     if allow_arch in arch:
+    #         flag = True
+    #         # print("arch (%s)" %allow_arch)
+    # if not flag:
+    #     r2.quit()
+    #     return None
+
     func_lst = r2.cmdj("aflj")            # evaluates JSONs and returns an object
     for func in func_lst:
         tmp = {}
@@ -33,7 +45,7 @@ def HandleR2(infile, disasm_dict):
         disasm_dict[func["offset"]] = ops
     info = r2.cmdj("ij")
     r2.quit()
-    return info
+    return info, ej
 
 def HandleBarf(infile, disasm_dict):
     from barf import BARF
@@ -58,13 +70,14 @@ if __name__ == "__main__":
 
     disasm_dict = {}
 
-    info = HandleR2(infile, disasm_dict)
+    info, ej = HandleR2(infile, disasm_dict)
 
-    file = {}
-    file["name"] = info["core"]["file"]
-    file["addr"] = info["bin"]["baddr"]
-    file["disasm"] = disasm_dict
+    if info and ej:
+        file = {}
+        file["name"] = info["core"]["file"]
+        file["addr"] = info["bin"]["baddr"]
+        file["arch"] = ej["anal.arch"]
+        file["disasm"] = disasm_dict
 
-
-    with open(outfile, "wb") as f:
-        pickle.dump(file, f)
+        with open(outfile, "wb") as f:
+            pickle.dump(file, f)

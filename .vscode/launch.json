@@ -5,11 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: 当前文件",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: extractor",
             "type": "python",
             "request": "launch",
             "program": "extractor.py",
-            "args": ["-i", "..\\test\\ftp.exe", "-o", "..\\test\\ftp.asmdump"],
+            "args": [
+                "-i",
+                "..\\test\\ftp.exe",
+                "-o",
+                "..\\test\\ftp.asmdump"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -17,7 +29,10 @@
             "type": "python",
             "request": "launch",
             "program": "rename.py",
-            "args": ["-i", "..\\test"],
+            "args": [
+                "-i",
+                "..\\test"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -25,7 +40,12 @@
             "type": "python",
             "request": "launch",
             "program": "load.py",
-            "args": ["-i", "..\\test", "-d", "..\\test\\database.pkl"],
+            "args": [
+                "-i",
+                "..\\test",
+                "-d",
+                "..\\test\\database.pkl"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -33,7 +53,15 @@
             "type": "python",
             "request": "launch",
             "program": "ngram_reader.py",
-            "args": ["-i", "..\\database\\database_1.pkl", "-b", "0", "-l", "50", "-s"],
+            "args": [
+                "-i",
+                "..\\test\\database.pkl",
+                "-b",
+                "0",
+                "-l",
+                "50",
+                "-s"
+            ],
             "console": "integratedTerminal"
         },
         {
@@ -41,8 +69,14 @@
             "type": "python",
             "request": "launch",
             "program": "cvt_database.py",
-            "args": ["-i", "C:\\Users\\root\\Documents\\WeChat Files\\wxid_k0oaccu7xi0a22\\FileStorage\\File\\2022-08\\database10.pkl", 
-                     "-o", "..\\database\\1_gram.pkl", "-n", "1"],
+            "args": [
+                "-i",
+                "C:\\Users\\root\\Documents\\WeChat Files\\wxid_k0oaccu7xi0a22\\FileStorage\\File\\2022-08\\database10.pkl",
+                "-o",
+                "..\\database\\1_gram.pkl",
+                "-n",
+                "1"
+            ],
             "console": "integratedTerminal"
         }
     ]

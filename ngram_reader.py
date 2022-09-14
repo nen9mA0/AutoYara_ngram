@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 import sys
 import getopt
 import os
@@ -41,9 +42,9 @@ def ParseSlice(slice):
 
         # operand
         ops = slice[i]
-        op_num = ops >> 6
+        # op_num = ops >> 6
         op_types = []
-        for j in range(op_num):
+        for j in range(4):
             if ops & 0x3 != 0:
                 op_type = ops&0x3
                 if op_type == 1:
@@ -53,7 +54,8 @@ def ParseSlice(slice):
                 elif op_type == 3:
                     op_types.append("imm")
             else:
-                raise ValueError("")
+                if len(op_types) > 0:
+                    raise ValueError("")
             ops = ops >> 2
         i += 1
 

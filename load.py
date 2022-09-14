@@ -21,10 +21,10 @@ class NGramDict(object):
 
 
 class NGramSlice(object):
-    length = 1
-    def __init__(self):
+    def __init__(self, ngram):
         self.ngd = NGramDict()
         self.total = 0
+        self.length = ngram
         # self.mnemonic_map = {}
 
     def Slicer(self, insn_lst):
@@ -52,9 +52,9 @@ class NGramSlice(object):
 
     # hashing  now use type 1 for speed
     # type1   with prefix
-    #  -------------------- 1 Byte --------------------- ------- 2 Byte -------                     -------------------- Last Byte --------------------
-    # | 1bit | 4bit           | 3bit                    | 5bit         | 3bit  |   nbit            | 2bit          | 2bit      | 2bit      | 2bit      |
-    # |   0  | length of insn | length of prefix+opcode | prefix group | reg   |   prefix + opcode | operand_num   | op1 type  | op2 type  | op3-type  |
+    #  -------------------- 1 Byte --------------------- ------- 2 Byte -------                     ------------------ Last Byte ------------------
+    # | 1bit | 4bit           | 3bit                    | 5bit         | 3bit  |   nbit            | 2bit      | 2bit      | 2bit      | 2bit      |
+    # |   0  | length of insn | length of prefix+opcode | prefix group | reg   |   prefix + opcode | op1 type  | op2 type  | op3 type  | op4 type  |
     # type2   without prefix
     #  -------------------- 1 Byte ---------------------                   -------------------- Last Byte --------------------
     # | 1bit | 4bit                    | 3bit           | nbit            | 2bit          | 2bit      | 2bit      | 2bit      |
@@ -80,6 +80,8 @@ class NGramSlice(object):
                     prefix_size += 1
             opfix_size = opcode_size + prefix_size
             insn_size = len(insn.bytes)
+            hash_type = 0               # here we use hash type 1
+            insn_size |= (hash_type << 4)
 
             myhash.append( (insn_size<<3) | opfix_size )
 
@@ -106,10 +108,11 @@ class NGramSlice(object):
                 else:
                     raise ValueError("")
                 ops |= op_type
-            if op_num > 3:
+            if op_num > 4:
                 raise ValueError("")
 
-            ops = ops | (op_num << 6 )
+            for num in range(op_num, 4):
+                ops = ops << 2
 
             myhash.append(ops)
 
@@ -131,12 +134,14 @@ def ConcatBytes(disasm_dict):
 
 
 if __name__ == "__main__":
-    opts, args = getopt.getopt(sys.argv[1:], "i:d:")
+    opts, args = getopt.getopt(sys.argv[1:], "i:d:n:")
     for opt, value in opts:
         if opt == "-i":
             infile = value
         elif opt == "-d":
             outfile = value
+        elif opt == "-n":
+            ngram = int(value, 10)
 
     if not os.path.exists(infile):
         raise ValueError("infile not exist: %s" %infile)
@@ -162,11 +167,14 @@ if __name__ == "__main__":
             elif a == 'n':
                 exit(0)
 
+    if ngram < 0:
+        raise ValueError("Invalid N: %d" %ngram)
+
     # infile = "..\\test\\ftp.dump"
 
     cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
     cs.detail = True
-    ngs = NGramSlice()
+    ngs = NGramSlice(ngram)
 
     file_num = 1
     for file in file_lst:
