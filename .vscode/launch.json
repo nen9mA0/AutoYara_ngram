@@ -44,7 +44,7 @@
                 "-i",
                 "..\\test",
                 "-n",
-                "4",
+                "2",
                 "-d",
                 "..\\test\\database.pkl",
                 "-a",
@@ -62,8 +62,6 @@
                 "..\\test\\database.pkl",
                 "-b",
                 "0",
-                "-l",
-                "50",
                 "-s"
             ],
             "console": "integratedTerminal"
