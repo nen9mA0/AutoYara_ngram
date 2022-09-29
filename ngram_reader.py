@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 import sys
 import getopt
 import os
@@ -6,8 +5,9 @@ import pickle
 import capstone
 
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
-debug = True
-if debug:
+debug = False
+collision_check = True
+if debug or collision_check:
     cs.detail = True
 
 # [Duplicate] old format, see comment in load.py
@@ -83,7 +83,7 @@ if debug:
 #  -------------------- 1 Byte --------------------- ------------- 1 Byte -------------- ----- n Byte ------ -------------------- 1 Byte ------------------- -- [optional] n Byte --
 # | 1bit | 4bit           | 3bit                    |     4bit     |        4bit        |        nbit       | 2bit      | 2bit      | 2bit      | 2bit      |         n bit         |
 # |   0  | length of insn | length of prefix+opcode | prefix group | length of mnemonic |   prefix + opcode | op1 type  | op2 type  | op3 type  | op4 type  |        mnemonic       |
-def ParseSlice(slice, debug=False, slice_bytes=None, slient_check=False):
+def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None):
     end = len(slice)
     i = 0
     begin = 0
@@ -129,12 +129,22 @@ def ParseSlice(slice, debug=False, slice_bytes=None, slient_check=False):
         if not slient_check:
             print(mystr)
 
-        if debug:
+        if debug or collision_check:
             result.append(mystr)
 
     if i != end:
         raise ValueError("%s : Parsing Result Not Equal" %slice[begin:i].hex())
 
+
+    if collision_check:
+        tmp = " ".join(result)
+        tmp_hash = hash(tmp)
+        if not tmp_hash in collision_dict:
+            collision_dict[tmp_hash] = (tmp, [slice])
+        else:
+            tmp, slice_lst = collision_dict[tmp_hash]
+            if not slice in slice_lst:
+                slice_lst.append(slice)
 
     if debug:
         for slice_byte in slice_bytes:
@@ -164,7 +174,9 @@ def ParseSlice(slice, debug=False, slice_bytes=None, slient_check=False):
                     raise ValueError("")
             if not flag:
                 print("%s :  Disassemble Error" %slice[begin:i].hex())
+        print("check %d slice_bytes" %len(slice_bytes))
 
+    return collision_dict
 
 
 
@@ -222,6 +234,11 @@ if __name__ == "__main__":
         length = len(hash_dict["data"]) - begin
 
     end = begin + length
+
+    if collision_check:
+        collision_dict = {}
+    else:
+        collision_dict = None
     for slice in hash_dict["data"]:
         if num>=begin and num<end:
             # decode = cs.disasm(hash_dict["data"][slice], 0)
@@ -230,15 +247,24 @@ if __name__ == "__main__":
             #     print(mystr)
             # print("")
 
-            if not debug:
+            if not (debug or collision_check):
                 print("===== %d =====" %hash_dict["data"][slice])
                 ParseSlice(slice)
             else:
                 if not slient_check:
                     print("===== %d =====" %hash_dict["data"][slice][0])
-                ParseSlice(slice, debug=True, slice_bytes=hash_dict["data"][slice][1], slient_check=slient_check)
+                ParseSlice(slice, slice_bytes=hash_dict["data"][slice][1], slient_check=slient_check, collision_dict=collision_dict)
             if not slient_check:
                 print("")
             num += 1
         else:
             pass
+
+    if collision_check:
+        print("== COLLISION ==")
+        for tmp_hash in collision_dict:
+            tmp, slice_lst = collision_dict[tmp_hash]
+            if len(slice_lst) > 1:
+                print(tmp)
+                for slice in slice_lst:
+                    print(slice)
