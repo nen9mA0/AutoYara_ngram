@@ -5,7 +5,7 @@ import pickle
 import capstone
 
 suffix = ".asmdump"
-debug = True
+debug = False
 
 class NGramDict(object):
     def __init__(self):
@@ -166,8 +166,10 @@ class NGramSlice(object):
             myhash.append( (tmp_byte<<3) | opfix_size )
 
             mnemonic_len = len(insn.mnemonic)
-            if mnemonic_len > 15:
-                raise ValueError("mnemonic length larger than 15")
+            mnemonic_too_long = False
+            if mnemonic_len >= 15:
+                mnemonic_too_long = True
+                mnemonic_len = 15
             tmp_byte = (prefix_group << 4) | mnemonic_len
             myhash.append(tmp_byte)
 
@@ -199,9 +201,11 @@ class NGramSlice(object):
             myhash.append(ops)
 
             tmp_byte = bytes(insn.mnemonic, "ascii")
-            if len(tmp_byte) != mnemonic_len:
+            if not mnemonic_too_long and len(tmp_byte) != mnemonic_len:
                 raise ValueError("Length different after encode")
             ret += bytes(myhash) + tmp_byte
+            if mnemonic_too_long:
+                ret += b"\x00"
 
             # for debug
             slice_bytes += insn.bytes

@@ -6,7 +6,7 @@ import capstone
 
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 debug = False
-collision_check = True
+collision_check = False
 if debug or collision_check:
     cs.detail = True
 
@@ -121,8 +121,15 @@ def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None)
             ops = ops >> 2
         i += 1
 
-        mnemonic = slice[i:i+mnemonic_len].decode("ascii")
-        i += mnemonic_len
+        if mnemonic_len < 15:
+            mnemonic = slice[i:i+mnemonic_len].decode("ascii")
+            i += mnemonic_len
+        else:
+            index = i + mnemonic_len
+            while slice[index] != 0:
+                index += 1
+            mnemonic = slice[i:index].decode("ascii")
+            i = index + 1
 
         mystr = mnemonic + " "
         mystr += " ".join(op_types[::-1])
@@ -248,8 +255,9 @@ if __name__ == "__main__":
             # print("")
 
             if not (debug or collision_check):
-                print("===== %d =====" %hash_dict["data"][slice])
-                ParseSlice(slice)
+                if not slient_check:
+                    print("===== %d =====" %hash_dict["data"][slice])
+                ParseSlice(slice, slient_check=slient_check)
             else:
                 if not slient_check:
                     print("===== %d =====" %hash_dict["data"][slice][0])
