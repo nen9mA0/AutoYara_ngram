@@ -59,10 +59,11 @@
             "program": "ngram_reader.py",
             "args": [
                 "-i",
-                "..\\test\\database.pkl",
+                "I:\\Project\\auto_yara\\ngram\\database\\4gram\\database.pkl",
                 "-b",
                 "0",
-                "-s"
+                "-s",
+                "-a"
             ],
             "console": "integratedTerminal"
         },
@@ -78,6 +79,19 @@
                 "..\\database\\1_gram.pkl",
                 "-n",
                 "1"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: probability_cvt",
+            "type": "python",
+            "request": "launch",
+            "program": "probability_cvt.py",
+            "args": [
+                "-i",
+                "I:\\Project\\auto_yara\\ngram\\database\\1gram\\database_raw.pkl",
+                "-o",
+                "I:\\Project\\auto_yara\\ngram\\database\\1gram\\database.pkl"
             ],
             "console": "integratedTerminal"
         }

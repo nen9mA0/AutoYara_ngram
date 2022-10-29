@@ -3,10 +3,17 @@ import getopt
 import os
 import pickle
 import capstone
+import binascii
 
 cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+cs.detail = True
 debug = False
 collision_check = False
+use_zero_padding = True
+smooth = True
+smooth_gram = 2
+n = 4
+
 if debug or collision_check:
     cs.detail = True
 
@@ -186,12 +193,90 @@ def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None)
     return collision_dict
 
 
+def HashInsn(slice):
+    ret = b""
+    index = []
+    # checksum = self.HashBytes(slice)
+
+    # for debug
+    slice_bytes = b""
+
+    for insn in slice:
+        myhash = []
+        opcode_size = 1             # for add 
+                                    # 00 /r	ADD r/m8, r8	MR	Valid	Valid	Add r8 to r/m8.
+        for i in range(len(insn.opcode)-1, -1, -1):
+            if insn.opcode[i] != 0:
+                opcode_size = i+1
+                break
+        prefix_group = 0
+        prefix_size = 0
+        for i in range(len(insn.prefix)):
+            if insn.prefix[i] != 0:
+                prefix_group |= 1<<i
+                prefix_size += 1
+        opfix_size = opcode_size + prefix_size
+        insn_size = len(insn.bytes)
+        hash_type = 0
+        tmp_byte = (hash_type << 4) | insn_size
+
+        myhash.append( (tmp_byte<<3) | opfix_size )
+
+        mnemonic_len = len(insn.mnemonic)
+        mnemonic_too_long = False
+        if mnemonic_len >= 15:
+            mnemonic_too_long = True
+            mnemonic_len = 15
+        tmp_byte = (prefix_group << 4) | mnemonic_len
+        myhash.append(tmp_byte)
+
+        if prefix_size > 0:
+            for i in range(len(insn.prefix)):
+                if insn.prefix[i] != 0:
+                    myhash.append(insn.prefix[i])
+        myhash.extend(insn.opcode[:opcode_size])
+
+        ops = 0
+        op_num = 0
+        for i in insn.operands:
+            ops = ops << 2
+            op_num += 1
+            if i.type == capstone.x86.X86_OP_REG:
+                op_type = 1
+            elif i.type == capstone.x86.X86_OP_MEM:
+                op_type = 2
+            elif i.type == capstone.x86.X86_OP_IMM:
+                op_type = 3
+            else:
+                raise ValueError("")
+            ops |= op_type
+        if op_num > 4:
+            raise ValueError("")
+
+        for num in range(op_num, 4):
+            ops = ops << 2
+        myhash.append(ops)
+
+        tmp_byte = bytes(insn.mnemonic, "ascii")
+        if not mnemonic_too_long and len(tmp_byte) != mnemonic_len:
+            raise ValueError("Length different after encode")
+        ret += bytes(myhash) + tmp_byte
+        if mnemonic_too_long:
+            ret += b"\x00"
+
+        index.append(len(ret))
+        # for debug
+        # slice_bytes += insn.bytes
+    # return ret, slice_bytes
+    return ret, index
+
 
 if __name__ == "__main__":
-    opts, args = getopt.getopt(sys.argv[1:], "i:b:l:fs")
+    opts, args = getopt.getopt(sys.argv[1:], "i:b:l:fsa")
     display_file = False
-    display_size = True
+    display_size = False
     slient_check = False
+    interactive = False
     begin = 0
     length = 0
     for opt, value in opts:
@@ -205,6 +290,8 @@ if __name__ == "__main__":
             display_file = True
         elif opt == "-s":
             slient_check = True
+        elif opt == "-a":
+            interactive = True
 
     if not os.path.exists(infile):
         raise ValueError("infile not exist: %s" %infile)
@@ -246,27 +333,80 @@ if __name__ == "__main__":
         collision_dict = {}
     else:
         collision_dict = None
-    for slice in hash_dict["data"]:
-        if num>=begin and num<end:
-            # decode = cs.disasm(hash_dict["data"][slice], 0)
-            # for insn in decode:
-            #     mystr = insn.mnemonic + " " + insn.op_str
-            #     print(mystr)
-            # print("")
 
-            if not (debug or collision_check):
-                if not slient_check:
-                    print("===== %d =====" %hash_dict["data"][slice])
-                ParseSlice(slice, slient_check=slient_check)
+    if interactive:
+        while True:
+            bytes_raw = input("> ")
+            if 'q' in bytes_raw:
+                break
+            bytes_rule = binascii.a2b_hex( bytes_raw.replace(' ', '') )
+            ori_bytes_len = len(bytes_rule)
+            if use_zero_padding:
+                bytes_rule += b"\x00\x00\x00\x00\x00\x00\x00"   # duplicated: we pad 6 bytes for fixing the last jump opcode
+                                                                # don't do this because we don't know the operand of these jmp
+            ori_insn = []
+            try:
+                decode = cs.disasm(bytes_rule, 0)
+            except Exception as e:
+                print(e)
+            decode_len = 0
+            for insn in decode:
+                ori_insn.append(insn)
+                decode_len += insn.size
+                if decode_len >= ori_bytes_len:
+                    break
+
+            tmp_data = hash_dict["data"]
+            insn_hash, index = HashInsn(ori_insn)
+            if insn_hash in tmp_data:
+                num, total = tmp_data[insn_hash]
+            elif smooth:            # n-gram laplace smoothing
+                print("use smooth")
+                num = 1
+                flag = False
+                begin_index = index[0]
+                for j in range(n-2, smooth_gram-2, -1):
+                    new_hash = insn_hash[begin_index:index[j+1]]
+                    if new_hash in hash_dict["every_total"][j]:
+                        total = hash_dict["every_total"][j][new_hash]
+                        flag = True
+                        # add to hash for speeding
+                        tmp_data[insn_hash] = (num, total)
+                        print("find in %d-gram" %(j+1))
+                        break
+                if not flag:
+                    if smooth_gram >= 0:
+                        num = 0
+                        total = 1
+                    else:
+                        total = hash_dict["total"]
             else:
+                num = 0
+                total = 1
+            print("num: %d   total: %d" %(num, total))
+
+    else:
+        for slice in hash_dict["data"]:
+            if num>=begin and num<end:
+                # decode = cs.disasm(hash_dict["data"][slice], 0)
+                # for insn in decode:
+                #     mystr = insn.mnemonic + " " + insn.op_str
+                #     print(mystr)
+                # print("")
+
+                if not (debug or collision_check):
+                    if not slient_check:
+                        print("===== %d =====" %hash_dict["data"][slice])
+                    ParseSlice(slice, slient_check=slient_check)
+                else:
+                    if not slient_check:
+                        print("===== %d =====" %hash_dict["data"][slice][0])
+                    ParseSlice(slice, slice_bytes=hash_dict["data"][slice][1], slient_check=slient_check, collision_dict=collision_dict)
                 if not slient_check:
-                    print("===== %d =====" %hash_dict["data"][slice][0])
-                ParseSlice(slice, slice_bytes=hash_dict["data"][slice][1], slient_check=slient_check, collision_dict=collision_dict)
-            if not slient_check:
-                print("")
-            num += 1
-        else:
-            pass
+                    print("")
+                num += 1
+            else:
+                pass
 
     if collision_check:
         print("== COLLISION ==")
