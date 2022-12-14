@@ -131,11 +131,18 @@ class NGramSlice(object):
     #     return bytes(myhash), slice_bytes
 
 
-    # 新hash格式
+    # (DUPLICATE)新hash格式
     # * 直接在最后加上mnemonic，这样直接不用modrm这位了（说实话我觉得这个解决方案很ugly，但是先将就着用吧，总比再解析XED规则每次都放到一个大表里比较要好）
     #  -------------------- 1 Byte --------------------- ------------- 1 Byte -------------- ----- n Byte ------ -------------------- 1 Byte ------------------- -- [optional] n Byte --
     # | 1bit | 4bit           | 3bit                    |     4bit     |        4bit        |        nbit       | 2bit      | 2bit      | 2bit      | 2bit      |         n bit         |
     # |   0  | length of insn | length of prefix+opcode | prefix group | length of mnemonic |   prefix + opcode | op1 type  | op2 type  | op3 type  | op4 type  |        mnemonic       |
+
+
+
+    # 新hash格式，之前居然没发现这个length of insn是个大bug
+    #  -------------------- 1 Byte -------------------- ------------- 1 Byte -------------- ----- n Byte ------ -------------------- 1 Byte ------------------- -- [optional] n Byte --
+    # |        5bit          | 3bit                    |     4bit     |        4bit        |        nbit       | 2bit      | 2bit      | 2bit      | 2bit      |         n bit         |
+    # |  length of mnemonic  | length of prefix+opcode | prefix group |    0(preserved)    |   prefix + opcode | op1 type  | op2 type  | op3 type  | op4 type  |        mnemonic       |
 
     def Hash(self, slice):
         ret = b""
@@ -143,7 +150,6 @@ class NGramSlice(object):
 
         # for debug
         slice_bytes = b""
-
         for insn in slice:
             myhash = []
             opcode_size = 1             # for add 
@@ -159,18 +165,11 @@ class NGramSlice(object):
                     prefix_group |= 1<<i
                     prefix_size += 1
             opfix_size = opcode_size + prefix_size
-            insn_size = len(insn.bytes)
-            hash_type = 0
-            tmp_byte = (hash_type << 4) | insn_size
 
-            myhash.append( (tmp_byte<<3) | opfix_size )
+            mnemonic_len = len(insn.mnemonic) & 0x1f
+            myhash.append( (mnemonic_len<<3) | opfix_size )
 
-            mnemonic_len = len(insn.mnemonic)
-            mnemonic_too_long = False
-            if mnemonic_len >= 15:
-                mnemonic_too_long = True
-                mnemonic_len = 15
-            tmp_byte = (prefix_group << 4) | mnemonic_len
+            tmp_byte = prefix_group << 4
             myhash.append(tmp_byte)
 
             if prefix_size > 0:
@@ -201,11 +200,9 @@ class NGramSlice(object):
             myhash.append(ops)
 
             tmp_byte = bytes(insn.mnemonic, "ascii")
-            if not mnemonic_too_long and len(tmp_byte) != mnemonic_len:
+            if len(tmp_byte) != mnemonic_len:
                 raise ValueError("Length different after encode")
             ret += bytes(myhash) + tmp_byte
-            if mnemonic_too_long:
-                ret += b"\x00"
 
             # for debug
             slice_bytes += insn.bytes

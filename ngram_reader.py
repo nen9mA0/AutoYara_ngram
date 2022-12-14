@@ -90,6 +90,12 @@ if debug or collision_check:
 #  -------------------- 1 Byte --------------------- ------------- 1 Byte -------------- ----- n Byte ------ -------------------- 1 Byte ------------------- -- [optional] n Byte --
 # | 1bit | 4bit           | 3bit                    |     4bit     |        4bit        |        nbit       | 2bit      | 2bit      | 2bit      | 2bit      |         n bit         |
 # |   0  | length of insn | length of prefix+opcode | prefix group | length of mnemonic |   prefix + opcode | op1 type  | op2 type  | op3 type  | op4 type  |        mnemonic       |
+
+# New format 20221215
+# 新hash格式，之前居然没发现这个length of insn是个大bug
+#  -------------------- 1 Byte -------------------- ------------- 1 Byte -------------- ----- n Byte ------ -------------------- 1 Byte ------------------- -- [optional] n Byte --
+# |        5bit          | 3bit                    |     4bit     |        4bit        |        nbit       | 2bit      | 2bit      | 2bit      | 2bit      |         n bit         |
+# |  length of mnemonic  | length of prefix+opcode | prefix group |    0(preserved)    |   prefix + opcode | op1 type  | op2 type  | op3 type  | op4 type  |        mnemonic       |
 def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None):
     end = len(slice)
     i = 0
@@ -98,11 +104,10 @@ def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None)
     while i < end:
         begin = i
         disasm_lst = []
-        insn_size = (slice[i] >> 3) & 0xf
+        mnemonic_len = (slice[i] >> 3) & 0x1f
         opfix_size = slice[i] & 0x7
         i += 1
 
-        mnemonic_len = slice[i] & 0x0f
         prefix_group = slice[i] >> 4
         i += 1
 
@@ -128,15 +133,8 @@ def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None)
             ops = ops >> 2
         i += 1
 
-        if mnemonic_len < 15:
-            mnemonic = slice[i:i+mnemonic_len].decode("ascii")
-            i += mnemonic_len
-        else:
-            index = i + mnemonic_len
-            while slice[index] != 0:
-                index += 1
-            mnemonic = slice[i:index].decode("ascii")
-            i = index + 1
+        mnemonic = slice[i:i+mnemonic_len].decode("ascii")
+        i += mnemonic_len
 
         mystr = mnemonic + " "
         mystr += " ".join(op_types[::-1])
@@ -195,12 +193,10 @@ def ParseSlice(slice, slice_bytes=None, slient_check=False, collision_dict=None)
 
 def HashInsn(slice):
     ret = b""
-    index = []
     # checksum = self.HashBytes(slice)
 
     # for debug
     slice_bytes = b""
-
     for insn in slice:
         myhash = []
         opcode_size = 1             # for add 
@@ -216,18 +212,11 @@ def HashInsn(slice):
                 prefix_group |= 1<<i
                 prefix_size += 1
         opfix_size = opcode_size + prefix_size
-        insn_size = len(insn.bytes)
-        hash_type = 0
-        tmp_byte = (hash_type << 4) | insn_size
 
-        myhash.append( (tmp_byte<<3) | opfix_size )
+        mnemonic_len = len(insn.mnemonic) & 0x1f
+        myhash.append( (mnemonic_len<<3) | opfix_size )
 
-        mnemonic_len = len(insn.mnemonic)
-        mnemonic_too_long = False
-        if mnemonic_len >= 15:
-            mnemonic_too_long = True
-            mnemonic_len = 15
-        tmp_byte = (prefix_group << 4) | mnemonic_len
+        tmp_byte = prefix_group << 4
         myhash.append(tmp_byte)
 
         if prefix_size > 0:
@@ -258,17 +247,14 @@ def HashInsn(slice):
         myhash.append(ops)
 
         tmp_byte = bytes(insn.mnemonic, "ascii")
-        if not mnemonic_too_long and len(tmp_byte) != mnemonic_len:
+        if len(tmp_byte) != mnemonic_len:
             raise ValueError("Length different after encode")
         ret += bytes(myhash) + tmp_byte
-        if mnemonic_too_long:
-            ret += b"\x00"
 
-        index.append(len(ret))
         # for debug
-        # slice_bytes += insn.bytes
-    # return ret, slice_bytes
-    return ret, index
+        slice_bytes += insn.bytes
+
+    return ret, slice_bytes
 
 
 if __name__ == "__main__":
@@ -364,9 +350,8 @@ if __name__ == "__main__":
                 print("use smooth")
                 num = 1
                 flag = False
-                begin_index = index[0]
                 for j in range(n-2, smooth_gram-2, -1):
-                    new_hash = insn_hash[begin_index:index[j+1]]
+                    new_hash = insn_hash[index[j]]
                     if new_hash in hash_dict["every_total"][j]:
                         total = hash_dict["every_total"][j][new_hash]
                         flag = True

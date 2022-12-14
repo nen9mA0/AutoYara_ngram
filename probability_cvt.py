@@ -52,7 +52,7 @@ if __name__ == "__main__":
         tmp_database = pickle.load(f)
 
     database = {}
-    database["total"] = tmp_database["total"]
+    database["total"] = [ tmp_database["total"] ]
     database["data"] = {}
     database["every_total"] = None
     # get the first element, ugly code but I don't know why I can't work with iter() and next() in dict_keys type
@@ -63,10 +63,9 @@ if __name__ == "__main__":
     hash_dict = [{} for i in range(n-1)]
     for key in tmp_database["data"].keys():
         result = ParseSliceLength(key)
-        begin_index = result[0]
         for i in range(n-1):
-            end_index = result[i+1]
-            new_key = key[begin_index:end_index]
+            end_index = result[i]
+            new_key = key[:end_index]
             if not new_key in hash_dict[i]:
                 hash_dict[i][new_key] = 0
             hash_dict[i][new_key] += tmp_database["data"][key]
@@ -74,9 +73,8 @@ if __name__ == "__main__":
 
     for key in tmp_database["data"].keys():
         result = ParseSliceLength(key)
-        begin_index = result[0]
-        end_index = result[n-1]
-        new_key = key[begin_index:end_index]
+        end_index = result[n-2]
+        new_key = key[:end_index]
 
         num = tmp_database["data"][key]
         if n != 1:
