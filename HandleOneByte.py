@@ -18,26 +18,32 @@ def CvtSlice(slice, opcode_cvt_dict):
         i += 1
 
         prefix_group = slice[i] >> 4
+        prefix_num = 0
+        for j in range(4):
+            if prefix_group & 1:
+                prefix_num += 1
+            prefix_group = prefix_group >> 1
         i += 1
 
         # didn't match target opcode
-        opfix = slice[i:i+opfix_size]
-        if not opfix in opcode_cvt_dict:
+        opcode = slice[i+prefix_num:i+opfix_size]
+        if not opcode in opcode_cvt_dict:
             i += opfix_size+1+mnemonic_len
             new_slice += slice[begin:i]
             continue
         else:
-            cvt_mnemonic, cvt_opcode = opcode_cvt_dict[opfix]
+            cvt_mnemonic, cvt_opcode = opcode_cvt_dict[opcode]
             i += opfix_size
             i += 1
             mnemonic = slice[i:i+mnemonic_len].decode("ascii")
             i += mnemonic_len
-            if cvt_mnemonic == mnemonic:
+            # 这边加上对mnemonic范围的限定是因为mnemonic实际上是包括如lock一类的prefix的
+            if cvt_mnemonic == mnemonic[-len(cvt_mnemonic):]:
                 # match a target insn
                 tmp_slice = slice[begin:i]
-                if len(cvt_opcode) != opfix_size:
+                if len(cvt_opcode) != opfix_size-prefix_num:
                     raise ValueError("")
-                tmp_slice = tmp_slice[:2] + cvt_opcode + tmp_slice[2+opfix_size:]
+                tmp_slice = tmp_slice[:2+prefix_num] + cvt_opcode + tmp_slice[2+opfix_size:]
                 new_slice += tmp_slice
             else:
                 new_slice += slice[begin:i]
@@ -49,7 +55,7 @@ def CvtSlice(slice, opcode_cvt_dict):
 
 
 
-infile = "I:\\Project\\auto_yara\\ngram\\database\\database\\4gram_database.pkl"
+infile = "I:\\Project\\auto_yara\\ngram\\database\\database\\1gram_database.pkl"
 if __name__ == "__main__":
     # opts, args = getopt.getopt(sys.argv[1:], "i:")
     # for opt, value in opts:
@@ -92,7 +98,8 @@ if __name__ == "__main__":
 
     if flag:
         for dup_insn_hash in database["dup_data"]:
-            del database["data"][dup_insn_hash]
+            if dup_insn_hash in database["data"]:
+                del database["data"][dup_insn_hash]
 
         mysum = 0
         for insn_hash in database["data"]:

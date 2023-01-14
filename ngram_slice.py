@@ -31,12 +31,13 @@ opcode_cvt_dict = GenRevHandleDict()
 # =========================
 
 
-def HashInsn(slice):
+def HashInsn(slice, debug=False):
     ret = b""
     # checksum = self.HashBytes(slice)
 
     # for debug
     slice_bytes = b""
+
     for insn in slice:
         myhash = []
         opcode_size = 1             # for add 
@@ -45,6 +46,7 @@ def HashInsn(slice):
             if insn.opcode[i] != 0:
                 opcode_size = i+1
                 break
+
         prefix_group = 0
         prefix_size = 0
         for i in range(len(insn.prefix)):
@@ -63,7 +65,18 @@ def HashInsn(slice):
             for i in range(len(insn.prefix)):
                 if insn.prefix[i] != 0:
                     myhash.append(insn.prefix[i])
-        myhash.extend(insn.opcode[:opcode_size])
+
+        # handle srm encoding in opcode
+        handle_srm = False
+        opcode_bytes = bytes(insn.opcode[:opcode_size])
+        if opcode_bytes in opcode_cvt_dict:
+            cvt_mnemonic, cvt_opcode = opcode_cvt_dict[opcode_bytes]
+            if cvt_mnemonic == insn.mnemonic[-len(cvt_mnemonic):]:
+                handle_srm = True
+        if handle_srm:
+            myhash.extend(list(cvt_opcode))
+        else:
+            myhash.extend(insn.opcode[:opcode_size])
 
         ops = 0
         op_num = 0
@@ -86,13 +99,14 @@ def HashInsn(slice):
             ops = ops << 2
         myhash.append(ops)
 
-        tmp_byte = bytes(insn.mnemonic, "ascii")
-        if len(tmp_byte) != mnemonic_len:
+        mnemonic_bytes = bytes(insn.mnemonic, "ascii")
+        if len(mnemonic_bytes) != mnemonic_len:
             raise ValueError("Length different after encode")
-        ret += bytes(myhash) + tmp_byte
+        ret += bytes(myhash) + mnemonic_bytes
 
         # for debug
-        slice_bytes += insn.bytes
+        if debug:
+            slice_bytes += insn.bytes
 
     return ret, slice_bytes
 
@@ -236,3 +250,30 @@ class NGramSlice(object):
 
     def Hash(self, slice):
         return HashInsn(slice)
+
+
+# check
+# 没法自动化检测所有的dup能否正确转换，因为现在的hash算法已经无法直接从hash还原为指令了（原来其实也不算完全可以）
+# 这里只能手动check
+
+if __name__ == "__main__":
+    check_asm = []
+    check_asm.append(b"\x50\x66\x53")   # push eax  push bx
+    check_asm.append(b"\x50\x53")   # push eax  push ebx
+
+    cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+    cs.detail = True
+
+    for asm in check_asm:
+        try:
+            decode = cs.disasm(asm, 0)
+            myslice = []
+            for insn in decode:
+                myslice.append(insn)
+
+            insn_hash = HashInsn(myslice)
+            print(insn_hash[0])
+            print(insn_hash[0].hex())
+            print("")
+        except Exception as e:
+            raise ValueError("")
