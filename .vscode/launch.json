@@ -59,7 +59,7 @@
             "program": "ngram_reader.py",
             "args": [
                 "-i",
-                "I:\\Project\\auto_yara\\ngram\\database\\4gram\\database.pkl",
+                "I:\\Project\\auto_yara\\ngram\\database\\database\\4gram_database.pkl",
                 "-b",
                 "0",
                 "-s",
