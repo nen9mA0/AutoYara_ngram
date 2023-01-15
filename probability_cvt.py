@@ -3,6 +3,40 @@ import getopt
 import os
 import pickle
 
+# def ParseSliceLength(slice):
+#     end = len(slice)
+#     i = 0
+#     begin = 0
+#     result = []
+#     while i < end:
+#         begin = i
+#         insn_size = (slice[i] >> 3) & 0xf
+#         opfix_size = slice[i] & 0x7
+#         i += 1
+
+#         mnemonic_len = slice[i] & 0x0f
+#         prefix_group = slice[i] >> 4
+#         i += 1
+#         i += opfix_size
+
+#         # operand
+#         i += 1
+
+#         if mnemonic_len < 15:
+#             i += mnemonic_len
+#         else:
+#             index = i + mnemonic_len
+#             while slice[index] != 0:
+#                 index += 1
+#             i = index + 1
+#         result.append(i)
+
+#     if i != end:
+#         raise ValueError("%s : Parsing Result Not Equal" %slice[begin:i].hex())
+
+#     return result
+
+# 20230115 update: new hash format
 def ParseSliceLength(slice):
     end = len(slice)
     i = 0
@@ -10,11 +44,10 @@ def ParseSliceLength(slice):
     result = []
     while i < end:
         begin = i
-        insn_size = (slice[i] >> 3) & 0xf
+        mnemonic_len = (slice[i] >> 3) & 0x1f
         opfix_size = slice[i] & 0x7
         i += 1
 
-        mnemonic_len = slice[i] & 0x0f
         prefix_group = slice[i] >> 4
         i += 1
         i += opfix_size
@@ -22,13 +55,8 @@ def ParseSliceLength(slice):
         # operand
         i += 1
 
-        if mnemonic_len < 15:
-            i += mnemonic_len
-        else:
-            index = i + mnemonic_len
-            while slice[index] != 0:
-                index += 1
-            i = index + 1
+        # mnemonic
+        i += mnemonic_len
         result.append(i)
 
     if i != end:
@@ -52,7 +80,7 @@ if __name__ == "__main__":
         tmp_database = pickle.load(f)
 
     database = {}
-    database["total"] = [ tmp_database["total"] ]
+    database["total"] = tmp_database["total"]
     database["data"] = {}
     database["every_total"] = None
     # get the first element, ugly code but I don't know why I can't work with iter() and next() in dict_keys type
@@ -80,7 +108,7 @@ if __name__ == "__main__":
         if n != 1:
             total = hash_dict[n-2][new_key]
         else:
-            total = num
+            total = tmp_database["total"]
         if num > total:
             raise ValueError("")
         database["data"][key] = (num, total)

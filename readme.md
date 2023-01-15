@@ -75,6 +75,18 @@
 
 - rename.py 很不优雅的代码，因为发现样本集里有些文件后缀是大写的 `.EXE` ，windows找文件不区分大小写但make是区分的，这个脚本用来把大写后缀 `.EXE` 改成小写 `.exe`
 
+### 数据库转换
+
+* cvt_database  应该是合并两个数据库的，已不使用
+
+* ConcatDatabase  合并多个数据库，现在服务器上有一个好一点的版本之后移植过来
+
+* HandleOneByte  为了转换含有SRM字段的opcode，目前需要在Probability_cvt之前运行
+
+* HandleOpcodeLen  原来hash算法的opcode解析出错，会导致0f 00和0f 38 00为opcode的指令hash出错，这里是为了给数据库修复这种错误
+
+* Probability_cvt  计算先验概率，最后一步转换，得到的database可以直接使用
+
 ### Changelog
 
 * 2022/8/13

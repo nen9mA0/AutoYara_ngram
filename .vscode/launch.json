@@ -89,9 +89,9 @@
             "program": "probability_cvt.py",
             "args": [
                 "-i",
-                "I:\\Project\\auto_yara\\ngram\\database\\3gram\\database_raw.pkl",
+                "I:\\Project\\auto_yara\\ngram\\database\\database\\4gram_database_raw.pkl",
                 "-o",
-                "I:\\Project\\auto_yara\\ngram\\database\\3gram\\database.pkl"
+                "I:\\Project\\auto_yara\\ngram\\database\\database\\4gram_database.pkl"
             ],
             "console": "integratedTerminal"
         }
